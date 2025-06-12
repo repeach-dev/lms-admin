@@ -105,7 +105,7 @@
                                     <p class="font-semibold text-sm text-gray-800">Hero Section Block</p>
                                 </div>
                                 <div class="block-item flex items-center p-3 border rounded-md bg-white cursor-pointer hover:bg-gray-50" data-block-id="2">
-                                    <p class="font-semibold text-sm text-gray-800">Features Section Block</p>
+                                    <p class="font-semibold text-sm text-gray-800">강좌 목록 블록</p>
                                 </div>
                                  <div class="block-item flex items-center p-3 border rounded-md bg-white cursor-pointer hover:bg-gray-50" data-block-id="3">
                                     <p class="font-semibold text-sm text-gray-800">Call to Action Block</p>
@@ -131,8 +131,11 @@
         <div class="grid grid-cols-12 gap-6 flex-grow min-h-0">
             <!-- Left Pane: Assets & Prompt -->
             <div class="col-span-4 flex flex-col min-h-0">
-                <h4 class="font-semibold mb-2">참고 자료</h4>
+                <h4 class="font-semibold mb-2">블록 생성 도구</h4>
                 <div class="bg-gray-50 p-3 rounded-lg border flex-grow flex flex-col min-h-0">
+                     <button id="open-content-selector" class="w-full text-center cursor-pointer bg-red-500 text-white p-2 rounded-md hover:bg-red-600 text-sm mb-3">
+                        콘텐츠/강사 정보 불러오기
+                    </button>
                     <label for="file-upload" class="w-full text-center cursor-pointer bg-white p-2 border-2 border-dashed rounded-md hover:bg-gray-100 text-sm mb-3">
                         이미지 파일 추가
                         <input id="file-upload" name="file-upload" type="file" class="sr-only" multiple accept="image/*">
@@ -173,9 +176,50 @@
         </div>
       </div>
     </div>
+    
+    <!-- Content Selector Modal -->
+    <div id="content-selector-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white flex flex-col" style="height: 80vh;">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">콘텐츠 선택</h3>
+                <button id="close-content-selector" class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
+            </div>
+            <div class="flex-grow overflow-y-auto custom-scrollbar">
+                <table class="w-full text-sm text-left text-gray-500">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                        <tr>
+                            <th class="p-2"><input type="checkbox" id="select-all-content"></th>
+                            <th class="py-3 px-6">상품 이름</th>
+                            <th class="py-3 px-6">최종 가격</th>
+                            <th class="py-3 px-6">생성일</th>
+                        </tr>
+                    </thead>
+                    <tbody id="content-list-body">
+                        <!-- Content items will be injected here by script -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="flex justify-end mt-4">
+                <button id="create-block-from-content" class="px-5 py-2 bg-red-500 text-white font-semibold rounded-md hover:bg-red-600">선택한 콘텐츠로 블록 생성</button>
+            </div>
+        </div>
+    </div>
+
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Mock Database
+            const mockDb = {
+                courses: [
+                    { id: 1, name: '패키지 이미지 업로드 테스트', price: 1000, date: '25.05.28', status: '판매', thumb: 'https://placehold.co/150x90/34D399/FFFFFF?text=Test' },
+                    { id: 2, name: '26년 의약대 편입 패키지', price: 900000, date: '25.02.19', status: '판매', thumb: 'https://placehold.co/150x90/60A5FA/FFFFFF?text=Medical' },
+                    { id: 3, name: '[2026 대비] 리드윈 합격 패스+ (자연계열)', price: 890000, date: '25.02.06', status: '판매', thumb: 'https://placehold.co/150x90/FBBF24/FFFFFF?text=Natural' },
+                    { id: 4, name: '[2026 대비] 리드윈 합격 패스+ (인문계열)', price: 667500, date: '25.02.06', status: '판매', thumb: 'https://placehold.co/150x90/A78BFA/FFFFFF?text=Liberal' },
+                    { id: 5, name: '환불 테스트', price: 1000, date: '25.05.29', status: '중지', thumb: 'https://placehold.co/150x90/F87171/FFFFFF?text=Refund' },
+                ]
+            };
+            
+            // DOM Elements
             const blockItems = document.querySelectorAll('.block-item');
             const mainPreviewFrame = document.getElementById('main-preview-frame');
             
@@ -183,8 +227,11 @@
             const closeBlockEditorBtn = document.getElementById('close-block-editor');
             const saveBlockChangesBtn = document.getElementById('save-block-changes');
             
-            const fileUploadInput = document.getElementById('file-upload');
-            const imageListContainer = document.getElementById('image-list-container');
+            const openContentSelectorBtn = document.getElementById('open-content-selector');
+            const contentSelectorModal = document.getElementById('content-selector-modal');
+            const closeContentSelectorBtn = document.getElementById('close-content-selector');
+            const createBlockFromContentBtn = document.getElementById('create-block-from-content');
+            const contentListBody = document.getElementById('content-list-body');
             
             const tabButtons = document.querySelectorAll('.tab-btn');
             const tabPanels = {
@@ -196,12 +243,14 @@
             
             let currentEditingBlockId = null;
 
+            // Block data store
             let blockContents = {
                 '1': `<div class="bg-gray-800 text-white text-center py-20 px-8 rounded-lg">\n    <h1 class="text-5xl font-bold mb-4">페이지의 첫인상</h1>\n    <p class="text-xl text-gray-300">이곳을 클릭하여 히어로 섹션을 편집하세요.</p>\n    <button class="mt-8 px-8 py-3 bg-red-500 rounded-md font-bold hover:bg-red-600">시작하기</button>\n</div>`,
-                '2': `<div class="py-16 px-8">\n    <h2 class="text-3xl font-bold text-center mb-10">핵심 기능 소개</h2>\n    <div class="grid md:grid-cols-3 gap-8">\n        <div class="text-center p-4"><div class="text-red-500 mb-3 text-4xl">★</div><h3 class="text-xl font-bold">기능 1</h3><p>첫 번째 기능을 설명합니다.</p></div>\n        <div class="text-center p-4"><div class="text-red-500 mb-3 text-4xl">✓</div><h3 class="text-xl font-bold">기능 2</h3><p>두 번째 기능을 설명합니다.</p></div>\n        <div class="text-center p-4"><div class="text-red-500 mb-3 text-4xl">🚀</div><h3 class="text-xl font-bold">기능 3</h3><p>세 번째 기능을 설명합니다.</p></div>\n    </div>\n</div>`,
+                '2': `<div class="bg-white py-12">\n    <div class="container mx-auto px-4">\n        <h2 class="text-3xl font-bold text-center mb-8">대표 강좌</h2>\n        <p class="text-center text-gray-600">아래 블록을 클릭하여 강좌 목록을 채워보세요.</p>\n    </div>\n</div>`,
                 '3': `<div class="bg-red-500 text-white text-center py-16 px-8 rounded-lg">\n    <h2 class="text-3xl font-bold mb-4">지금 바로 경험해보세요</h2>\n    <p>망설일 이유가 없습니다. 행동으로 옮기세요!</p>\n</div>`
             };
             
+            // --- Main Functions ---
             const renderMainPreview = () => {
                 const fullHtml = Object.keys(blockContents).sort().map(key => blockContents[key]).join('\n\n');
                 mainPreviewFrame.srcdoc = `<!DOCTYPE html><html><head><script src="https://cdn.tailwindcss.com"><\/script></head><body class="bg-gray-50">${fullHtml}</body></html>`;
@@ -212,26 +261,49 @@
                 blockPreviewFrame.srcdoc = blockHtml;
             };
 
+            const populateContentSelector = () => {
+                contentListBody.innerHTML = '';
+                mockDb.courses.forEach(course => {
+                    const row = document.createElement('tr');
+                    row.className = 'bg-white border-b';
+                    row.innerHTML = `
+                        <td class="p-2"><input type="checkbox" class="content-item-checkbox" data-content-id="${course.id}"></td>
+                        <td class="py-4 px-6 font-medium text-gray-900">${course.name}</td>
+                        <td class="py-4 px-6">${course.price.toLocaleString()} 원</td>
+                        <td class="py-4 px-6">${course.date}</td>
+                    `;
+                    contentListBody.appendChild(row);
+                });
+            };
+
+            const generateHtmlForContent = (selectedIds) => {
+                const selectedCourses = mockDb.courses.filter(c => selectedIds.includes(c.id.toString()));
+                let courseCardsHtml = selectedCourses.map(course => `
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden transform hover:-translate-y-1 transition-transform duration-300">
+                        <img src="${course.thumb}" alt="${course.name}" class="w-full h-40 object-cover">
+                        <div class="p-4">
+                            <h3 class="font-bold text-lg mb-2 truncate">${course.name}</h3>
+                            <p class="text-red-500 font-semibold text-xl">${course.price.toLocaleString()}원</p>
+                        </div>
+                    </div>
+                `).join('\n');
+
+                return `<div class="bg-gray-100 py-12">\n    <div class="container mx-auto px-4">\n        <h2 class="text-3xl font-bold text-center mb-12">추천 강좌 목록</h2>\n        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">\n            ${courseCardsHtml}\n        </div>\n    </div>\n</div>`;
+            };
+
+            // --- Event Listeners ---
             blockItems.forEach(item => {
                 item.addEventListener('click', () => {
                     currentEditingBlockId = item.dataset.blockId;
-                    const currentHtml = blockContents[currentEditingBlockId] || '<div>새로운 블록입니다.</div>';
-                    
-                    blockHtmlCodeTextarea.value = currentHtml.trim();
-                    imageListContainer.innerHTML = '';
-                    document.getElementById('prompt').value = '';
-                    
+                    blockHtmlCodeTextarea.value = (blockContents[currentEditingBlockId] || '<div></div>').trim();
                     updateBlockPreview();
                     blockEditorModal.classList.remove('hidden');
-                    // Reset to editor tab
                     switchTab('editor');
                 });
             });
 
             closeBlockEditorBtn.addEventListener('click', () => blockEditorModal.classList.add('hidden'));
-
             blockHtmlCodeTextarea.addEventListener('input', updateBlockPreview);
-            
             saveBlockChangesBtn.addEventListener('click', () => {
                 if (currentEditingBlockId) {
                     blockContents[currentEditingBlockId] = blockHtmlCodeTextarea.value;
@@ -239,8 +311,31 @@
                 }
                 blockEditorModal.classList.add('hidden');
             });
-            
-            // Tab switching logic
+
+            openContentSelectorBtn.addEventListener('click', () => {
+                populateContentSelector();
+                contentSelectorModal.classList.remove('hidden');
+            });
+
+            closeContentSelectorBtn.addEventListener('click', () => {
+                contentSelectorModal.classList.add('hidden');
+            });
+
+            createBlockFromContentBtn.addEventListener('click', () => {
+                const selectedIds = Array.from(document.querySelectorAll('.content-item-checkbox:checked'))
+                                         .map(cb => cb.dataset.contentId);
+                if (selectedIds.length === 0) {
+                    alert('하나 이상의 콘텐츠를 선택해주세요.');
+                    return;
+                }
+                
+                const generatedHtml = generateHtmlForContent(selectedIds);
+                blockHtmlCodeTextarea.value = generatedHtml;
+                updateBlockPreview();
+                contentSelectorModal.classList.add('hidden');
+                switchTab('editor');
+            });
+
             const switchTab = (activeTab) => {
                 tabButtons.forEach(button => {
                     const tab = button.dataset.tab;
@@ -255,34 +350,14 @@
             };
 
             tabButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    switchTab(button.dataset.tab);
-                });
+                button.addEventListener('click', () => switchTab(button.dataset.tab));
+            });
+            
+            document.getElementById('select-all-content')?.addEventListener('change', (e) => {
+                document.querySelectorAll('.content-item-checkbox').forEach(cb => cb.checked = e.target.checked);
             });
 
-            // Image upload logic
-            fileUploadInput.addEventListener('change', (event) => {
-                const files = event.target.files;
-                if (!files) return;
-
-                Array.from(files).forEach(file => {
-                    const listItem = document.createElement('div');
-                    listItem.className = 'flex items-center justify-between p-2 border rounded-md text-sm bg-white';
-                    listItem.innerHTML = `
-                        <span class="truncate">${file.name}</span>
-                        <span class="text-gray-500 text-xs flex-shrink-0 ml-4">${(file.size / 1024).toFixed(1)} KB</span>
-                    `;
-                    imageListContainer.appendChild(listItem);
-                });
-                event.target.value = '';
-            });
-
-            window.addEventListener('click', (event) => {
-                if (event.target == blockEditorModal) {
-                    blockEditorModal.classList.add('hidden');
-                }
-            });
-
+            // --- Initial Render ---
             renderMainPreview();
         });
     </script>
