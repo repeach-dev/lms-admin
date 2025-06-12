@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>신규 페이지 생성 - Peach</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        /* 사용자 정의 글꼴 및 스타일 */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+        /* 스크롤바 스타일 */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #aaa;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #888;
+        }
+        /* iframe 미리보기 스타일 */
+        .preview-frame {
+            width: 100%;
+            height: 100%;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+        }
+        /* 활성 탭 스타일 */
+        .tab-btn.active {
+            border-bottom: 2px solid #ef4444; /* red-500 */
+            color: #1f2937; /* gray-800 */
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div class="flex h-screen bg-gray-200">
+        <!-- Sidebar -->
+        <aside class="w-64 flex-shrink-0 bg-[#343a40] text-gray-300 flex flex-col">
+            <div class="h-16 flex items-center justify-center text-white text-2xl font-bold">
+                Peach
+            </div>
+            <nav class="flex-1 px-2 py-4 space-y-2 overflow-y-auto">
+                 <div class="px-4 text-sm font-semibold text-gray-400">비즈니스 운영</div>
+                 <a href="#" class="flex items-center px-4 py-2 text-gray-100 hover:bg-gray-700 rounded-md">
+                     대시보드
+                 </a>
+                <div class="pt-4 px-4 text-sm font-semibold text-gray-400">사이트 운영</div>
+                 <div>
+                     <button class="w-full flex items-center justify-between px-4 py-2 text-white bg-red-500 rounded-md">
+                         <span class="flex items-center">
+                             홈페이지 관리
+                         </span>
+                     </button>
+                     <div class="pl-8 mt-2 space-y-2">
+                         <a href="#" class="block px-4 py-2 hover:text-white">기본 설정</a>
+                         <a href="#" class="block px-4 py-2 text-red-500 font-bold">신규 페이지 생성</a>
+                     </div>
+                 </div>
+            </nav>
+        </aside>
+
+        <!-- Main content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <header class="flex justify-between items-center p-4 bg-white border-b">
+                <h1 class="text-xl font-bold text-gray-800">신규 페이지 생성</h1>
+                <div>
+                    <button class="ml-2 px-5 py-2 bg-gray-700 text-white font-semibold rounded-md hover:bg-gray-800">
+                        저장 및 적용
+                    </button>
+                </div>
+            </header>
+
+            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-4">
+                <div class="grid grid-cols-12 gap-4 h-full">
+                    <!-- Left Column: Live Preview -->
+                    <div class="col-span-8 bg-white p-4 rounded-lg shadow-md flex flex-col">
+                        <h2 class="text-md font-semibold text-gray-700 mb-4">페이지 미리보기</h2>
+                        <div class="flex-grow w-full h-full">
+                            <iframe id="main-preview-frame" title="Main Preview" class="preview-frame"></iframe>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Page List & Block Management -->
+                    <div class="col-span-4 bg-white p-4 rounded-lg shadow-md flex flex-col">
+                        <div class="flex-grow">
+                            <h2 class="text-md font-semibold text-gray-700 mb-4">페이지 목록</h2>
+                            <ul>
+                                <li class="p-2 text-red-600 bg-red-100 rounded-md cursor-pointer">
+                                    영어
+                                </li>
+                            </ul>
+                            <hr class="my-4">
+                            <h2 class="text-md font-semibold text-gray-700 mb-2">블록 관리</h2>
+                            <div id="block-list" class="space-y-3 overflow-y-auto custom-scrollbar pr-2">
+                                <div class="block-item flex items-center p-3 border rounded-md bg-white cursor-pointer hover:bg-gray-50" data-block-id="1">
+                                    <p class="font-semibold text-sm text-gray-800">Hero Section Block</p>
+                                </div>
+                                <div class="block-item flex items-center p-3 border rounded-md bg-white cursor-pointer hover:bg-gray-50" data-block-id="2">
+                                    <p class="font-semibold text-sm text-gray-800">Features Section Block</p>
+                                </div>
+                                 <div class="block-item flex items-center p-3 border rounded-md bg-white cursor-pointer hover:bg-gray-50" data-block-id="3">
+                                    <p class="font-semibold text-sm text-gray-800">Call to Action Block</p>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="w-full mt-4 py-2 px-4 border-2 border-dashed border-gray-300 rounded-md text-gray-500 hover:bg-gray-50 flex items-center justify-center">
+                            새 블록 추가
+                        </button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <!-- Block Editor Modal (Redesigned) -->
+    <div id="block-editor-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 h-full w-full z-50">
+      <div class="relative top-10 mx-auto p-5 border w-full max-w-7xl shadow-lg rounded-md bg-white flex flex-col" style="height: 90vh;">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xl font-bold">블록 편집기</h3>
+          <button id="close-block-editor" class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
+        </div>
+        <div class="grid grid-cols-12 gap-6 flex-grow min-h-0">
+            <!-- Left Pane: Assets & Prompt -->
+            <div class="col-span-4 flex flex-col min-h-0">
+                <h4 class="font-semibold mb-2">참고 자료</h4>
+                <div class="bg-gray-50 p-3 rounded-lg border flex-grow flex flex-col min-h-0">
+                    <label for="file-upload" class="w-full text-center cursor-pointer bg-white p-2 border-2 border-dashed rounded-md hover:bg-gray-100 text-sm mb-3">
+                        이미지 파일 추가
+                        <input id="file-upload" name="file-upload" type="file" class="sr-only" multiple accept="image/*">
+                    </label>
+                    <div id="image-list-container" class="flex-grow space-y-2 overflow-y-auto custom-scrollbar border-t pt-2">
+                        <!-- Uploaded images will be listed here -->
+                    </div>
+                    <textarea id="prompt" class="w-full mt-3 p-2 border rounded-md text-sm resize-none" rows="4" placeholder="페이지 제작 아이디어를 입력하세요..."></textarea>
+                </div>
+            </div>
+
+            <!-- Right Pane: Editor & Preview Tabs -->
+            <div class="col-span-8 flex flex-col min-h-0">
+                <!-- Tab Buttons -->
+                <div class="border-b border-gray-200">
+                    <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+                        <button class="tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-tab="editor">
+                            HTML 편집
+                        </button>
+                        <button class="tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700" data-tab="preview">
+                            미리보기
+                        </button>
+                    </nav>
+                </div>
+                <!-- Tab Panels -->
+                <div class="flex-grow pt-4 min-h-0">
+                    <div id="editor-panel" class="tab-panel w-full h-full">
+                        <textarea id="block-html-code" class="w-full h-full p-2 font-mono text-sm border border-gray-300 rounded-md resize-none custom-scrollbar" placeholder="HTML 코드를 입력하세요..."></textarea>
+                    </div>
+                    <div id="preview-panel" class="tab-panel w-full h-full hidden">
+                        <iframe id="block-preview-frame" title="Block Preview" class="preview-frame"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="flex justify-end mt-4">
+          <button id="save-block-changes" class="px-5 py-2 bg-red-500 text-white font-semibold rounded-md hover:bg-red-600">저장</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const blockItems = document.querySelectorAll('.block-item');
+            const mainPreviewFrame = document.getElementById('main-preview-frame');
+            
+            const blockEditorModal = document.getElementById('block-editor-modal');
+            const closeBlockEditorBtn = document.getElementById('close-block-editor');
+            const saveBlockChangesBtn = document.getElementById('save-block-changes');
+            
+            const fileUploadInput = document.getElementById('file-upload');
+            const imageListContainer = document.getElementById('image-list-container');
+            
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabPanels = {
+                editor: document.getElementById('editor-panel'),
+                preview: document.getElementById('preview-panel')
+            };
+            const blockHtmlCodeTextarea = document.getElementById('block-html-code');
+            const blockPreviewFrame = document.getElementById('block-preview-frame');
+            
+            let currentEditingBlockId = null;
+
+            let blockContents = {
+                '1': `<div class="bg-gray-800 text-white text-center py-20 px-8 rounded-lg">\n    <h1 class="text-5xl font-bold mb-4">페이지의 첫인상</h1>\n    <p class="text-xl text-gray-300">이곳을 클릭하여 히어로 섹션을 편집하세요.</p>\n    <button class="mt-8 px-8 py-3 bg-red-500 rounded-md font-bold hover:bg-red-600">시작하기</button>\n</div>`,
+                '2': `<div class="py-16 px-8">\n    <h2 class="text-3xl font-bold text-center mb-10">핵심 기능 소개</h2>\n    <div class="grid md:grid-cols-3 gap-8">\n        <div class="text-center p-4"><div class="text-red-500 mb-3 text-4xl">★</div><h3 class="text-xl font-bold">기능 1</h3><p>첫 번째 기능을 설명합니다.</p></div>\n        <div class="text-center p-4"><div class="text-red-500 mb-3 text-4xl">✓</div><h3 class="text-xl font-bold">기능 2</h3><p>두 번째 기능을 설명합니다.</p></div>\n        <div class="text-center p-4"><div class="text-red-500 mb-3 text-4xl">🚀</div><h3 class="text-xl font-bold">기능 3</h3><p>세 번째 기능을 설명합니다.</p></div>\n    </div>\n</div>`,
+                '3': `<div class="bg-red-500 text-white text-center py-16 px-8 rounded-lg">\n    <h2 class="text-3xl font-bold mb-4">지금 바로 경험해보세요</h2>\n    <p>망설일 이유가 없습니다. 행동으로 옮기세요!</p>\n</div>`
+            };
+            
+            const renderMainPreview = () => {
+                const fullHtml = Object.keys(blockContents).sort().map(key => blockContents[key]).join('\n\n');
+                mainPreviewFrame.srcdoc = `<!DOCTYPE html><html><head><script src="https://cdn.tailwindcss.com"><\/script></head><body class="bg-gray-50">${fullHtml}</body></html>`;
+            };
+
+            const updateBlockPreview = () => {
+                const blockHtml = `<!DOCTYPE html><html><head><script src="https://cdn.tailwindcss.com"><\/script></head><body class="p-2">${blockHtmlCodeTextarea.value}</body></html>`;
+                blockPreviewFrame.srcdoc = blockHtml;
+            };
+
+            blockItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    currentEditingBlockId = item.dataset.blockId;
+                    const currentHtml = blockContents[currentEditingBlockId] || '<div>새로운 블록입니다.</div>';
+                    
+                    blockHtmlCodeTextarea.value = currentHtml.trim();
+                    imageListContainer.innerHTML = '';
+                    document.getElementById('prompt').value = '';
+                    
+                    updateBlockPreview();
+                    blockEditorModal.classList.remove('hidden');
+                    // Reset to editor tab
+                    switchTab('editor');
+                });
+            });
+
+            closeBlockEditorBtn.addEventListener('click', () => blockEditorModal.classList.add('hidden'));
+
+            blockHtmlCodeTextarea.addEventListener('input', updateBlockPreview);
+            
+            saveBlockChangesBtn.addEventListener('click', () => {
+                if (currentEditingBlockId) {
+                    blockContents[currentEditingBlockId] = blockHtmlCodeTextarea.value;
+                    renderMainPreview();
+                }
+                blockEditorModal.classList.add('hidden');
+            });
+            
+            // Tab switching logic
+            const switchTab = (activeTab) => {
+                tabButtons.forEach(button => {
+                    const tab = button.dataset.tab;
+                    if (tab === activeTab) {
+                        button.classList.add('active');
+                        tabPanels[tab].classList.remove('hidden');
+                    } else {
+                        button.classList.remove('active');
+                        tabPanels[tab].classList.add('hidden');
+                    }
+                });
+            };
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    switchTab(button.dataset.tab);
+                });
+            });
+
+            // Image upload logic
+            fileUploadInput.addEventListener('change', (event) => {
+                const files = event.target.files;
+                if (!files) return;
+
+                Array.from(files).forEach(file => {
+                    const listItem = document.createElement('div');
+                    listItem.className = 'flex items-center justify-between p-2 border rounded-md text-sm bg-white';
+                    listItem.innerHTML = `
+                        <span class="truncate">${file.name}</span>
+                        <span class="text-gray-500 text-xs flex-shrink-0 ml-4">${(file.size / 1024).toFixed(1)} KB</span>
+                    `;
+                    imageListContainer.appendChild(listItem);
+                });
+                event.target.value = '';
+            });
+
+            window.addEventListener('click', (event) => {
+                if (event.target == blockEditorModal) {
+                    blockEditorModal.classList.add('hidden');
+                }
+            });
+
+            renderMainPreview();
+        });
+    </script>
+</body>
+</html>
